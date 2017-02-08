@@ -1,0 +1,135 @@
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Auckland Transport HOP Retail</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+  <!-- Load Leaflet from CDN-->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet-src.js"></script>
+
+  <!-- Load Esri Leaflet from CDN -->
+  <script src="https://unpkg.com/esri-leaflet@2.0.7"></script>
+
+  <style>
+    body { margin:0; padding:0; }
+    #map { position: absolute; top:0; bottom:0; right:0; left:0; }
+    #info-pane {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 400;
+      padding: 1em;
+      background: #b2efa7;
+  }
+
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="info-pane" class="leaflet-bar">Hover to inspect</div>
+
+<script>
+
+  //todo: set up a basic map framework
+  var map = L.map('map').setView([-36.9202,174.8394, 174.6786], 10);
+  map.animate = false;
+
+  //todo: make a custom icon
+  var atIcon = L.icon({
+      iconUrl: 'http://at0257-l/apps/Leaflet/icons/ATMetro.png',
+      iconRetinaUrl: 'http://at0257-l/apps/Leaflet/icons/ATMetro.png',
+      iconSize: [40, 40],
+      //iconAnchor: [13.5, 17.5],
+      //popupAnchor: [-3, -76],
+  });
+
+  //todo: add the Baselayer
+  var streets = L.esri.basemapLayer('Streets').addTo(map);
+
+  //todo: add Wards Layer
+  //var wards = L.esri.featureLayer({
+  //  url: 'https://services1.arcgis.com/n4yPwebTjJCmXB6W/arcgis/rest/services/AucklandCouncilWard/FeatureServer/0',
+  //  style: {color: '#650dad', opacity: 0.50, fillcolor: '#f3f49c', fillopacity: 0.99},
+  //  minZoom : 3,
+  //  maxZoom : 10,
+  //  }).addTo(map);
+
+
+  //todo: add Retail Layer
+  var retailers = L.esri.featureLayer({
+    url: 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/ATHopRetailLocations/FeatureServer/2',
+    pointToLayer: function (geojson, latlng) { return L.marker(latlng, {icon: atIcon})},
+    }).addTo(map);
+
+  //todo: add Top Up Machines
+  var topupLocations = L.esri.featureLayer({
+    url: 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/ATHopRetailLocations/FeatureServer/1',
+    pointToLayer: function (geojson, latlng) { return L.marker(latlng, {icon: atIcon})},
+    }).addTo(map);
+
+  //todo: add Ferry Layer
+  var ferryRoutes = L.esri.featureLayer({
+    url: 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/FerryService/FeatureServer/1',
+    style: {color: '#1968e8'},
+    minZoom : 10,
+    maxZoom : 17,
+    }).addTo(map);
+
+  //todo: add Bus routes
+  var busRoutes = L.esri.featureLayer({
+    url: 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/BusService/FeatureServer/2',
+    style: {color: '#e81919'},
+    minZoom : 15,
+    maxZoom : 17,
+    }).addTo(map);
+
+
+  //todo: add Rail routes
+  var trainRoutes = L.esri.featureLayer({
+    url: 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/TrainService/FeatureServer/1',
+    style: {color: '#0f0102'},
+    minZoom : 10,
+    maxZoom : 17,
+    }).addTo(map);
+
+
+  //todo: function to find closest AT TOPUP retail outlet
+  function onMapATTopup(e) {
+    //declare Query, and street Address
+    var query = L.esri.query({url : 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/ATHopRetailLocations/FeatureServer/2'});
+    var strLocationAddress;
+    query.nearby(e.latlng, 1000);
+    query.run(function(error, featureCollection, response){
+          if (featureCollection.features.length = 1) {
+            for (var prop in featureCollection.features[0].properties)  {
+              if (featureCollection.features.length = 1) {
+                if (prop.includes("LOCATIONADDRESSDISPLAY")) {strLocationAddress = featureCollection.features[0].properties[prop];var popup = L.popup().setLatLng(e.latlng).setContent("TOPUP HOP CARD AT - " + strLocationAddress).openOn(map);}
+              }
+            }
+          }
+      });  //query.run
+  }
+
+  //todo: onClick Map Event
+  map.on('click', onMapATTopup);
+
+  //todo: mouseover Event
+  topupLocations.on('mouseover', function(e) {document.getElementById('info-pane').innerHTML = 'RETAILER: ' + e.layer.feature.properties.TOPUPLOCATION;}); 
+  retailers.on('mouseover', function(e) {document.getElementById('info-pane').innerHTML = 'RETAILER: ' + e.layer.feature.properties.TOPUPLOCATION;}); 
+  busRoutes.on('mouseover', function(e) {document.getElementById('info-pane').innerHTML = 'ROUTENUMBER: ' + e.layer.feature.properties.ROUTENUMBER;}); 
+  trainRoutes.on('mouseover', function(e) {document.getElementById('info-pane').innerHTML = 'ROUTENAME: ' + e.layer.feature.properties.ROUTENAME;}); 
+  ferryRoutes.on('mouseover', function(e) {document.getElementById('info-pane').innerHTML = 'ROUTENAME: ' + e.layer.feature.properties.ROUTENAME;}); 
+  //wards.on('mouseover', function(e) {document.getElementById('info-pane').innerHTML = 'WARD: ' + e.layer.feature.properties.WARD;}); 
+
+
+  //refresh the site
+  //setTimeout(function(){
+  //  window.location.reload(1);
+  //}, 30000);
+
+</script>
+
+</body>
+</html>

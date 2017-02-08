@@ -1,0 +1,55 @@
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Auckland Council Wards</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+  <!-- Load Leaflet from CDN-->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.2/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.0.2/dist/leaflet-src.js"></script>
+
+  <!-- Load Esri Leaflet from CDN -->
+  <script src="https://unpkg.com/esri-leaflet@2.0.7"></script>
+
+  <style>
+    body { margin:0; padding:0; }
+    #map { position: absolute; top:0; bottom:0; right:0; left:0; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+
+  //declare Map
+  var map = L.map('map').setView([-36.9202,174.8394, 174.6786], 9);
+
+  //add Feature Layer
+  var streets = L.esri.basemapLayer('Streets').addTo(map);
+  //var busRoutes = L.esri.featureLayer({url: 'https://services2.arcgis.com/JkPEgZJGxhSjYOo0/ArcGIS/rest/services/BusService/FeatureServer/2'}).addTo(map);
+  var wards = L.esri.featureLayer({url: 'https://atalgisau01.aucklandtransport.govt.nz/arcgis/rest/services/AC/AucklandCouncilBoard/FeatureServer/0'}).addTo(map);
+
+  //identify Features Function
+  function onMapClick(e) {
+        L.esri.identifyFeatures({url: 'https://atalgisau01.aucklandtransport.govt.nz/arcgis/rest/services/AC/AucklandCouncilBoard/MapServer'})
+        .on(map)
+        .at(e.latlng)
+        .run(function(error, featureCollection, response) { 
+            var boardName;
+            for (var prop in featureCollection.features[0].properties) {
+                if (prop.includes("Board")) {boardName = prop + " : " + featureCollection.features[0].properties[prop];}
+            }
+            //var popup = L.popup().setLatLng(e.latlng).setContent(boardName).openOn(map);
+        } );
+    }
+
+
+  //onClick Map Event
+  map.on('click', onMapClick);
+
+
+</script>
+
+</body>
+</html>
